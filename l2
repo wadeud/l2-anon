@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// Interface for interacting with zk-SNARKs verifier contract
+interface ZkVerifier {
+    function verifyProof(bytes memory proof) external returns (bool);
+}
+
+contract L2Anonymity {
+    struct Transaction {
+        bytes32 rootHash;
+        bytes zkProof; // zk-SNARK proof for transaction validity and anonymity
+    }
+
+    mapping(uint256 => Transaction) public transactions;
+    uint256 public lastTransactionId;
+
+    ZkVerifier public zkVerifierContract;
+
+    event NewTransaction(uint256 indexed transactionId, bytes32 indexed rootHash);
+
+    constructor(address _zkVerifierContract) {
+        zkVerifierContract = ZkVerifier(_zkVerifierContract);
+    }
+
+    // Submit a new transaction to the L2 with enhanced anonymity
+    function submitTransaction(bytes32 _rootHash, bytes memory _zkProof) external {
+        // Verify the zk-SNARK proof for transaction validity and anonymity
+        require(zkVerifierContract.verifyProof(_zkProof), "Proof verification failed");
+
+        lastTransactionId++;
+        transactions[lastTransactionId] = Transaction(_rootHash, _zkProof);
+        emit NewTransaction(lastTransactionId, _rootHash);
+    }
+}
